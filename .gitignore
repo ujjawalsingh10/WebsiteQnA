@@ -1,5 +1,6 @@
 venv
 logs
 __pycache__/
+app\__pycache__
 parsed_site_text.txt
 todo.txt
