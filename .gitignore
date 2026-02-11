@@ -5,3 +5,5 @@ app\__pycache__
 parsed_site_text.txt
 todo.txt
 .env
+retrieved_debug.txt
+site_data.txt

@@ -25,12 +25,20 @@ from app.components.vector_store import save_vector_store, load_vector_store
 # if __name__ == "__main__":
 #     main()
 
-url = 'https://www.chrismytton.com/plain-text-websites/'
+# url = 'https://www.chrismytton.com/plain-text-websites/'
+url = 'https://huggingface.co/meta-llama/Llama-3.2-3B-Instruct'
+# url = 'https://reference.langchain.com/python/langchain_core/retrievers/'
 
 output = load_and_parse_url(url)
+with open('site_data.txt', 'w', encoding='utf-8') as f:
+    print('writing site content in text file...')
+    content = output.page_content
+    title = output.metadata['title']
+    f.write(f"{title}\n{content}")
+
 chunks = create_text_chunks([output])
 db = save_vector_store(chunks)
-loaded_db = load_vector_store()
+# loaded_db = load_vector_store()
 
-print(db)
+print("VectorStore created successfully")
 

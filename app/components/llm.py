@@ -24,7 +24,7 @@ def load_llm(huggingface_repo_id: str = HUGGINGFACE_REPO_ID, hf_token: str = HF_
     
     except Exception as e:
         custom_error = CustomException(
-            message="Failed to load a LLM",
+            message="Failed to load the LLM",
             error_detail=e
         )
         logger.exception(custom_error)
