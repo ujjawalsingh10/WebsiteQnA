@@ -1,93 +1,95 @@
-# from langchain_classic.chains import Re
 from langchain_core.prompts import PromptTemplate
 from app.components.vector_store import load_vector_store
 from app.components.llm import load_llm
 from app.config.config import HUGGINGFACE_REPO_ID, HF_TOKEN
-from langchain_core.runnables import RunnablePassthrough
 from langchain_core.output_parsers import StrOutputParser
+from app.common.logger import get_logger
+from app.common.custom_exceptions import CustomException
 
-prompt = PromptTemplate(
-    template="""
-    You are a technical assistant helping analyze website content.
+logger = get_logger(__name__)
 
-    Use ONLY the provided context.
-    You may infer the website name from titles, headers, or visible branding.
+class RAGService:
+    def __init__(self):
+        try:
+            logger.info('Initializing RAG Serive !')
 
-    If the answer cannot be determined from the context, say:
-    "I don't have enough information."
+            self.db = load_vector_store()
+            self.llm = load_llm(HUGGINGFACE_REPO_ID, HF_TOKEN)
 
-    Context:
-    {context}
+            self.prompt = PromptTemplate(
+                template="""
+                You are a technical assistant helping analyze website content.
 
-    Question:
-    {question}
+                Use ONLY the provided context.
+                You may infer the website name from titles, headers, or visible branding.
 
-    Answer:
-    """,
-        input_variables=["context", "question"]
-)
+                If the answer cannot be determined from the context, say:
+                "I don't have enough information."
 
-parser = StrOutputParser()
+                Context:
+                {context}
 
-db = load_vector_store()
+                Question:
+                {question}
 
-llm = load_llm(HUGGINGFACE_REPO_ID, HF_TOKEN)
+                Answer:
+                """,
+                input_variables=["context", "question"]
 
-retriever = db.as_retriever(search_type = 'similarity', search_kwargs={'k' : 4})
+            )
 
-# rag_chain = (
-#     {
-#         'context' : retriever,
-#         'question' : RunnablePassthrough()
-#     }
-#     | prompt
-#     | llm
-#     | parser
-# )
+            self.parser = StrOutputParser()
+            self.chain = self.prompt | self.llm | self.parser
 
-# print("\n Rage system ready. Type 'exit' to quit \n")
+            logger.info('RAG Serive initiated Successfully !')
+        
+        except Exception as e:
+            custom_error = CustomException(
+                message="Failed to initialize RAG service",
+                error_detail=e
+            )
+            logger.exception(custom_error)
+            raise custom_error
+        
 
-# while True:
-#     query = input('Ask a question: ')
+    def ask(self, question: str, debug: bool = False):
+        try:
+            logger.info(f"Processing query: {question}")
 
-#     if query.lower() == 'exit':
-#         break
+            retriever = self.db.as_retriever(
+                search_type='similarity',
+                search_kwargs = {'k': 6}
+            )
 
-#     response = rag_chain.invoke(query)
+            retrieved_docs = retriever.invoke(question)
 
-#     print('\nAnswer:\n')
-#     print(response.content if hasattr(response, "content") else response)
-#     print("\n" + "-" * 50 + "\n")
+            context_text = "\n\n".join(
+                [doc.page_content for doc in retrieved_docs]
+            )
 
-while True:
-    query = input('Ask a question: ')
+            if debug == True:
+                logger.info(f'Debug mode enabled -  Showing retrieved chunks !!\nQuery:{question}\n')
+                for i, doc in enumerate(retrieved_docs):
+                    logger.info(f"Chunk {i+1}: {doc.page_content[:500]}")
 
-    if query.lower() == 'exit':
-        break
+            answer = self.chain.invoke(
+                {
+                    'context' : context_text,
+                    'question' : question
+                })
+            
+            logger.info('Query successfully processed')
 
-    # STEP 1: Retrieve documents manually
-    retrieved_docs = retriever.invoke(query)
-
-    # STEP 2: Write retrieved content to debug file
-    with open("retrieved_debug.txt", "w", encoding="utf-8") as f:
-        f.write(f"Query: {query}\n\n")
-        for i, doc in enumerate(retrieved_docs):
-            f.write(f"\n--- Document {i+1} ---\n")
-            f.write(doc.page_content)
-            f.write("\n\n")
-
-    # STEP 3: Combine context manually
-    context_text = "\n\n".join([doc.page_content for doc in retrieved_docs])
-
-    # STEP 4: Call prompt → LLM → parser manually
-    formatted_prompt = prompt.invoke({
-        "context": context_text,
-        "question": query
-    })
-
-    response = llm.invoke(formatted_prompt)
-    final_answer = parser.invoke(response)
-
-    print("\nAnswer:\n")
-    print(final_answer)
-    print("\n" + "-" * 50 + "\n")
+            return {
+                'answer' : answer,
+                'sources' : [doc.metadata for doc in retrieved_docs]
+            }
+        
+        except Exception as e:
+            custom_error = CustomException(
+                message='Error while processing query',
+                error_detail=e
+            )
+            logger.exception(custom_error)
+            raise custom_error
+        

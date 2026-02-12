@@ -3,8 +3,8 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-CHUNK_SIZE = 1500
-CHUNK_OVERLAP = 300
+CHUNK_SIZE = 2000
+CHUNK_OVERLAP = 150
 DB_FAISS_PATH = 'vectorstore/db_faiss'
 
 HF_TOKEN = os.getenv('HF_TOKEN')

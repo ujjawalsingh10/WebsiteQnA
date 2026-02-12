@@ -1,44 +1,53 @@
-# from fastapi import FastAPI
-# from pydantic import BaseModel
+from fastapi import FastAPI, HTTPException
+from pydantic import BaseModel, AnyUrl, Field
+from typing import Annotated, Any
 
-# app = FastAPI(
-#     title='Website QnA API',
-#     version='0.0.1'
-# )
-
-# @app.get('/health')
-# def health():
-#     return {'status': 'ok'}
-
-from app.components.web_loaders.web_base_loader import load_and_parse_url
-from app.components.chunking import create_text_chunks
-from app.components.embeddings import get_embedding_model
+from app.common.logger import get_logger
+from app.common.custom_exceptions import CustomException
+from app.components.retriever import RAGService
+from app.components.ingestion import IngestionService
 from app.components.vector_store import save_vector_store, load_vector_store
 
-# def main():
-#     model = get_embedding_model()
-#     print("Embedding model ready:", model)
-#     sentences = ["This is an example sentence", "Each sentence is converted"]
-#     res = model.embed_documents(sentences)
-#     print(res)
+logger = get_logger(__name__)
 
-# if __name__ == "__main__":
-#     main()
+app = FastAPI()
 
-# url = 'https://www.chrismytton.com/plain-text-websites/'
-url = 'https://huggingface.co/meta-llama/Llama-3.2-3B-Instruct'
-# url = 'https://reference.langchain.com/python/langchain_core/retrievers/'
+rag_service = RAGService()
 
-output = load_and_parse_url(url)
-with open('site_data.txt', 'w', encoding='utf-8') as f:
-    print('writing site content in text file...')
-    content = output.page_content
-    title = output.metadata['title']
-    f.write(f"{title}\n{content}")
+class IngestURL(BaseModel):
+    """
+    URL text to be extracted
+    """
+    url: Annotated[AnyUrl, Field(..., description='Enter a valid URL')]
 
-chunks = create_text_chunks([output])
-db = save_vector_store(chunks)
-# loaded_db = load_vector_store()
+class ChatRequest(BaseModel):
+    question: Annotated[str, Field(..., min_length=4, max_length=200, description='Enter a query about the website')]
 
-print("VectorStore created successfully")
+
+@app.post('/ingest')
+def ingest(request: IngestURL):
+    try:
+        return IngestionService.ingest(str(request.url))
+    
+    except Exception as e:
+        custom_error = CustomException(
+            message='Ingestion Request failed !',
+            error_detail=e
+        )
+        logger.error(custom_error)
+        raise HTTPException(status_code=500, detail=custom_error.error_message)
+    
+@app.post('/chat')
+def chat(request: ChatRequest):
+    try:
+        return rag_service.ask(request.question, debug=True)
+    
+    except Exception as e:
+        custom_error = CustomException(
+            message='Chat Request failed !',
+            error_detail=e
+        )
+        logger.error(custom_error)
+        raise HTTPException(status_code=500, detail=custom_error.error_message)
+    
 

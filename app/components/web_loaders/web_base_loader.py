@@ -33,9 +33,7 @@ def load_and_parse_url(url: str) -> Document:
         raise ValueError("URL must start with http:// or https://")
     logger.info(f"Loading URL: {url}")
 
-    try:
-        result = {}
-            
+    try:            
         loader = WebBaseLoader(url)
         documents = loader.load()
 
