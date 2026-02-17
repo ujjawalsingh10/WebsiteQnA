@@ -44,6 +44,10 @@ def load_and_parse_url(url: str) -> Document:
         docs = documents[0]
         cleaned_text = preprocess_url_page_content(docs.page_content)
         
+        with open('parsed_site_text.txt', 'w', encoding='utf-8') as f:
+            print('Writing website content in text file')
+            f.write(cleaned_text)
+
         return Document(
             page_content=cleaned_text,
             metadata={

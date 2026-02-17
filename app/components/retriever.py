@@ -70,7 +70,7 @@ class RAGService:
             if debug == True:
                 logger.info(f'Debug mode enabled -  Showing retrieved chunks !!\nQuery:{question}\n')
                 for i, doc in enumerate(retrieved_docs):
-                    logger.info(f"Chunk {i+1}: {doc.page_content[:500]}")
+                    logger.info(f"Chunk {i+1}: {doc.page_content}")
 
             answer = self.chain.invoke(
                 {
