@@ -26,13 +26,15 @@ class RAGService:
                 If the answer cannot be determined from the context, say:
                 "I don't have enough information."
 
+                When you use information from a context block, cite it using its bracket number like [1], [2].
+
                 Context:
                 {context}
 
                 Question:
                 {question}
 
-                Answer:
+                Answer (with citations):
                 """,
                 input_variables=["context", "question"]
 
@@ -58,19 +60,45 @@ class RAGService:
 
             retriever = self.db.as_retriever(
                 search_type='similarity',
+                # search_type='mmr',
                 search_kwargs = {'k': 6}
             )
 
             retrieved_docs = retriever.invoke(question)
 
-            context_text = "\n\n".join(
-                [doc.page_content for doc in retrieved_docs]
-            )
+            context_blocks = []
+            references = []
+
+            for idx, doc in enumerate(retrieved_docs):
+                ref_number = idx + 1
+
+                context_blocks.append(
+                    f"[{ref_number}] {doc.page_content}"
+                )
+
+                source = doc.metadata.get('source', 'Unknown')
+                page = doc.metadata.get('page', None)
+
+                filename = source.split('\\')[-1]
+
+                if page is not None:
+                    references.append(f"[{ref_number}] {filename} (Page {page})")
+                else:
+                    references.append(f"[{ref_number}] {filename}")
+                
+            context_text = "\n\n".join(context_blocks)
+
+
+            # context_text = "\n\n".join(
+            #     [doc.page_content for doc in retrieved_docs]
+            # )
 
             if debug == True:
                 logger.info(f'Debug mode enabled -  Showing retrieved chunks !!\nQuery:{question}\n')
                 for i, doc in enumerate(retrieved_docs):
                     logger.info(f"Chunk {i+1}: {doc.page_content}")
+                logger.info(f"--------------------------------------------------------")
+            logger.info(f"This is the context text : {context_text}")
 
             answer = self.chain.invoke(
                 {
@@ -79,12 +107,20 @@ class RAGService:
                 })
             
             logger.info('Query successfully processed')
-
+            
+            final_answer = """
+            {answer}
+            Sources : {references}
+            """
             return {
                 'answer' : answer,
-                'sources' : [doc.metadata for doc in retrieved_docs]
+                'references' : list(set(references))
             }
-        
+
+            # return {
+            #     'asnwer' : final_answer
+            # }     
+           
         except Exception as e:
             custom_error = CustomException(
                 message='Error while processing query',

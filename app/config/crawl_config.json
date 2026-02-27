@@ -1,0 +1,61 @@
+{
+    "_comment" : "Web Crawler Configuration",
+    "seeds" : [
+        "https://pmjay.gov.in/"
+    ],
+    "crawl" : {
+        "max_depth" : 3,
+        "max_pages" : 500,
+        "max_pages_per_domain" : 200,
+        "delay_between_requests_sec" : 1.5,
+        "request_timeout_sec" : 1.5,
+        "max_retries" : 3,
+        "concurrent_requests" : 3,
+        "respect_robots_txt" : true,
+        "user_agent" : "RAGBot/1.0 (Crawler; @cdac,noida"
+    },
+    "scope" : {
+        "internal_only": true,
+        "allow_subdomains" : true,
+        "external_sittes_whitelist" : [],
+        "url_patterns_include" : [],
+        "url_patterns_exclude" : [
+         ".*\\.(css|js|woff|woff2|ttf|eot|ico|svg)$",
+        ".*/login.*",
+        ".*/logout.*",
+        ".*/cart.*",
+        ".*/account.*",
+        ".*\\?.*sessionid.*",
+        ".*\\?.*token.*"
+        ]
+    },
+    "assets" : {
+        "download_images" : true,
+        "download_pdfs" : true,
+        "min_image_size_bytes" : 5120,
+        "max_image_size_mb" : 20,
+        "max_pdf_size_mb" : 100,
+        "image_extensions" : [
+            ".jpg",
+            ".jpeg",
+            ".png",
+            ".webp",
+            ".gif",
+            ".bmp"
+        ],
+        "pdf_extensions" : [
+            ".pdf"
+        ]
+    },
+    "output" : {
+        "base_dir" : "./output",
+        "pretty_json" : true,
+        "compress_old_runs": false
+    },
+    "logging" : {
+        "level" : "INFO",
+        "log_file" : "./output/crawl.log",
+        "progress_every_n_pages" : 10
+    }
+
+}

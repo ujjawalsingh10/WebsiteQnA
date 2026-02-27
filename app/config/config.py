@@ -17,5 +17,5 @@ HUGGINGFACE_REPO_ID = 'meta-llama/Llama-3.1-8B-Instruct'
 
 
 ## Embeddings
-HUGGINGFACE_EMBEDDING_MODEL = "sentence-transformers/all-MiniLM-L6-v2"
-# HUGGINGFACE_EMBEDDING_MODEL = "sentence-transformers/all-MPNet-base-v2"
+# HUGGINGFACE_EMBEDDING_MODEL = "sentence-transformers/all-MiniLM-L6-v2"
+HUGGINGFACE_EMBEDDING_MODEL = "sentence-transformers/all-MPNet-base-v2"
