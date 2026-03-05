@@ -15,3 +15,5 @@ unstructured
 trafilatura
 markdownify
 chromadb
+tldextract
+pillow

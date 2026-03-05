@@ -5,10 +5,10 @@
     ],
     "crawl" : {
         "max_depth" : 3,
-        "max_pages" : 500,
-        "max_pages_per_domain" : 200,
+        "max_pages" : 700,
+        "max_pages_per_domain" : 500,
         "delay_between_requests_sec" : 1.5,
-        "request_timeout_sec" : 1.5,
+        "request_timeout_sec" : 20,
         "max_retries" : 3,
         "concurrent_requests" : 3,
         "respect_robots_txt" : true,
@@ -45,6 +45,43 @@
         ],
         "pdf_extensions" : [
             ".pdf"
+        ]
+    },
+    "extraction": {
+        "preserve_heading_hierarchy": true,
+        "extract_tables": true,
+        "extract_meta_tags" : true,
+        "min_text_length_chars" : 100,
+        "_comment_noise_selectors": "CSS selectors to decompose before markdown conversion. Add site-specific selectors here.",
+        "noise_selectors": [
+            ".topbar",
+            ".footer_logos",
+            ".pager",
+            ".pagination",
+            "nav.pager",
+            ".view-id-photo_gallery",
+            ".view-id-video_gallery", 
+            ".field--name-field-youtube-video",
+            ".views-field-field-youtube-video",
+            ".twitter-timeline",
+            ".fb-page",
+            "[class*='social']",
+            ".counter-section",
+            ".stats-section",
+            "#block-views-block-social-media-feeds",
+            ".ayushman-diaries",
+            ".footer_logos",
+            "#cookie-banner",
+            ".sticky-header",
+            ".social-share",
+            ".related-links",
+            ".advertisement"
+        ],
+        "_comment_skip_link_prefixes": "Anchor link text starting with these strings will be removed (skip-to-content links)",
+        "skip_link_prefixes": [
+        "skip",
+        "jump to",
+        "go to main"
         ]
     },
     "output" : {
