@@ -3,8 +3,11 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-CHUNK_SIZE = 2000
+# ********************** Chunking config ***************
+CHUNK_SIZE = 1000
 CHUNK_OVERLAP = 150
+MIN_CHUNK_SIZE = 50 ## Discard chunks smaller than this
+
 DB_FAISS_PATH = 'vectorstore/db_faiss'
 
 HF_TOKEN = os.getenv('HF_TOKEN')

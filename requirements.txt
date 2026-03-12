@@ -17,3 +17,7 @@ markdownify
 chromadb
 tldextract
 pillow
+qdrant-client
+langchain-groq
+langchain-qdrant
+langgraph
