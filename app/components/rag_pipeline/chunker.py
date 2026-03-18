@@ -69,7 +69,7 @@ def _build_chunks_from_sentences(
                 chunks.append((overlap_text + " " + sent).strip())
             else:
                 chunks.append(sent)
-            overlap_text = sent[-overlap:] ## overlap sized chunk from end
+            overlap_text = sent[-overlap:] ## skip overlap sized chunk from end
             continue
         
         if current_len + sent_len + 1 > chunk_size and current:
@@ -126,54 +126,195 @@ def _heading_breadcrumb(heading_hierarchy: list[str], heading_text: str) -> str:
 # ******************** Chunker ************************ #
 def chunk_page(page: dict) -> list[dict]:
     """
-    Chunk a single crawled json page into a RAG ready chunks.
-    Returns a list of chunk dict ready for embedding + Qdrant upload
+    Chunk a single crawled page JSON into RAG-ready chunks.
+    Returns list of chunk dicts ready for embedding + Qdrant upload.
     """
-    url = page.get('url', '')
-    title = page.get('title', '')
-    domain = page.get('domain', '')
-    depth = page.get('depth', '')
-    doc_id = page.get('doc_id', '')
-    headings = page.get('headings', '')
-    h_tier = page.get('heading_hierarchy', [])
-    body = page.get('body_text', '')
-    tables = page.get('tables', '')
-    meta_desc = page.get('meta_description', '').strip()
-
+    url      = page.get("url", "")
+    title    = page.get("title", "")
+    domain   = page.get("domain", "")
+    depth    = page.get("depth", 0)
+    doc_id   = page.get("doc_id", "")
+    headings = page.get("headings", [])
+    h_hier   = page.get("heading_hierarchy", [])
+    body     = page.get("body_text", "").strip()
+    tables   = page.get("tables", [])
+    meta_desc = page.get("meta_description", "").strip()
+ 
     all_chunks = []
-
-    # 1. Meta chunk
-    # Title + meta description as standalone chunk
-    # This ensures basic "what is this page about " queries hit something
+ 
+    # ── 1. Meta chunk ─────────────────────────────────────────────
+    # Title + meta description as a standalone chunk
+    # This ensures basic "what is this page about" queries hit something
     if title or meta_desc:
-        meta_text = ''
+        meta_text = ""
         if title:
             meta_text += f"Page Title: {title}\n"
         if meta_desc:
-            meta_desc += f"Summary: {meta_desc}"
-        if len(meta_desc) >= MIN_CHUNK_SIZE:
+            meta_text += f"Summary: {meta_desc}"
+        if len(meta_text) >= MIN_CHUNK_SIZE:
             all_chunks.append({
-                'text' : meta_text.strip(),
-                'url' : url,
-                'title' : title,
-                'domain' : domain,
-                'depth' : depth,
-                'section' : 'Page Summary',
-                'chunk_index' : 0,
-                'source_type' : 'meta',
-                'doc_id' : doc_id
+                "text":        meta_text.strip(),
+                "url":         url,
+                "title":       title,
+                "domain":      domain,
+                "depth":       depth,
+                "section":     "Page Summary",
+                "chunk_index": 0,
+                "source_type": "meta",
+                "doc_id":      doc_id,
             })
-    
-    # 2. Body text Chunk
+ 
+    # ── 2. Body text chunks ───────────────────────────────────────
     if body:
-        ## split body into sections by markdown headings
-        
+        # Split body into sections by markdown headings
+        # This gives us natural section boundaries
+        sections = _split_by_headings(body)
+ 
+        body_chunks = []
+        for section_heading, section_text in sections:
+            if not section_text.strip():
+                continue
+ 
+            sentences = _split_sentences(section_text)
+            raw_chunks = _build_chunks_from_sentences(sentences)
+ 
+            # Find breadcrumb for this section
+            breadcrumb = _heading_breadcrumb(h_hier, section_heading) if section_heading else ""
+ 
+            for chunk_text in raw_chunks:
+                # Prepend heading context to chunk text
+                # This makes the chunk self-contained for embedding
+                if breadcrumb:
+                    full_text = f"[Section: {breadcrumb}]\n\n{chunk_text}"
+                else:
+                    full_text = chunk_text
+ 
+                body_chunks.append({
+                    "text":        full_text,
+                    "url":         url,
+                    "title":       title,
+                    "domain":      domain,
+                    "depth":       depth,
+                    "section":     breadcrumb or section_heading,
+                    "chunk_index": 0,   # filled below
+                    "source_type": "webpage",
+                    "doc_id":      doc_id,
+                })
+ 
+        all_chunks.extend(body_chunks)
+ 
+    # ── 3. Table chunks ───────────────────────────────────────────
+    # Tables are kept atomic — never split across chunks
+    for table in tables:
+        md = table.get("markdown", "").strip()
+        caption = table.get("caption", "")
+        if not md or len(md) < MIN_CHUNK_SIZE:
+            continue
+ 
+        table_text = f"Table: {caption}\n\n{md}" if caption else md
+        all_chunks.append({
+            "text":        table_text,
+            "url":         url,
+            "title":       title,
+            "domain":      domain,
+            "depth":       depth,
+            "section":     f"Table: {caption}" if caption else "Table",
+            "chunk_index": 0,
+            "source_type": "table",
+            "doc_id":      doc_id,
+        })
+ 
+    # ── Fill chunk_index and total_chunks ─────────────────────────
+    total = len(all_chunks)
+    for i, chunk in enumerate(all_chunks):
+        chunk["chunk_index"] = i
+        chunk["total_chunks"] = total
+ 
+    return all_chunks
 
 
-text = """
-Your chunker.py is implementing a hybrid semantic + structural chunking strategy. It is significantly more advanced than the basic RecursiveCharacterTextSplitter used in many LangChain examples.
 
-I'll break down what method it is using, how it works, and whether it is good for your RAG crawler.
-"""
-sentences =_split_sentences(text)
-print(_build_chunks_from_sentences(sentences, chunk_size=20, overlap=10))
+def _split_by_headings(text: str) -> list[tuple[str, str]]:
+    """
+    Split markdown body text by heading lines (# ## ### etc.)
+    Returns list of (heading_text, section_content) tuples.
+    First tuple may have empty heading if content precedes first heading.
+    """
+    heading_pattern = re.compile(r'^(#{1,6})\s+(.+)$', re.MULTILINE)
+    matches = list(heading_pattern.finditer(text))
+ 
+    if not matches:
+        return [("", text)]
+ 
+    sections = []
+ 
+    # Content before first heading
+    if matches[0].start() > 0:
+        sections.append(("", text[:matches[0].start()].strip()))
+ 
+    for i, match in enumerate(matches):
+        heading_text = match.group(2).strip()
+        start = match.end()
+        end = matches[i + 1].start() if i + 1 < len(matches) else len(text)
+        content = text[start:end].strip()
+        sections.append((heading_text, content))
+ 
+    return sections
+ 
+ 
+# ── Batch processor ───────────────────────────────────────────────
+ 
+def chunk_all_pages(pages_dir: str) -> list[dict]:
+    """
+    Load all page JSONs from output/pages/**/*.json
+    Returns all chunks across all pages.
+    """
+    pages_path = Path(pages_dir)
+    if not pages_path.exists():
+        raise FileNotFoundError(f"Pages directory not found: {pages_dir}")
+ 
+    all_chunks = []
+    page_count = 0
+    skipped = 0
+ 
+    for json_file in pages_path.rglob("*.json"):
+        try:
+            page = json.loads(json_file.read_text(encoding="utf-8"))
+ 
+            # Skip error pages
+            if page.get("rag_status", {}).get("error"):
+                skipped += 1
+                continue
+ 
+            # Skip pages with no body text
+            if len(page.get("body_text", "")) < 100:
+                skipped += 1
+                continue
+ 
+            chunks = chunk_page(page)
+            all_chunks.extend(chunks)
+            page_count += 1
+ 
+        except Exception as e:
+            logger.warning(f"Failed to chunk {json_file.name}: {e}")
+            skipped += 1
+ 
+    logger.info(
+        f"Chunked {page_count} pages → {len(all_chunks)} chunks "
+        f"({skipped} pages skipped)"
+    )
+    return all_chunks
+ 
+# if __name__ == "__main__":
+#     # Quick test
+#     import sys
+#     pages_dir = sys.argv[1] if len(sys.argv) > 1 else r"app\components\web_crawler\output\pages"
+#     chunks = chunk_all_pages(pages_dir)
+#     print(f"\nTotal chunks: {len(chunks)}")
+#     print(f"\nSample chunk:")
+#     if chunks:
+#         c = chunks[10]
+#         print(f"  source_type : {c['source_type']}")
+#         print(f"  url         : {c['url']}")
+#         print(f"  section     : {c['section']}")
+#         print(f"  text[:200]  : {c['text']}")

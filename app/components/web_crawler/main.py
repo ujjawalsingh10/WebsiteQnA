@@ -266,7 +266,7 @@ def main():
     if args.dry_run:
         dry_run(config, seed_urls)
     else:
-        from orchestrator import CrawlOrchestrator
+        from app.components.web_crawler.crawler_engine import CrawlOrchestrator
         orchestrator = CrawlOrchestrator(config)
         orchestrator.run(seed_urls)
 
