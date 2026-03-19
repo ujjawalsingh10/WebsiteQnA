@@ -17,18 +17,17 @@ import os
 import logging
 from dotenv import load_dotenv
 from app.config.config import COLLECTION_NAME, RERANKER_MODEL, RERANK_TOP_K, MIN_SCORE, CANDIDATE_COUNT
-
-load_dotenv()
-logger = logging.getLogger(__name__)
-
-
 from qdrant_client import QdrantClient
 from qdrant_client.models import (
     SearchRequest, NamedVector, NamedSparseVector,
     SparseVector, FusionQuery, Prefetch, Query,
     models,
 )
-from app.components.rag_pipeline.embedder import get_embedder
+from app.components.rag_pipeline.ingestion.embedder import get_embedder
+
+load_dotenv()
+logger = logging.getLogger(__name__)
+
 
 try:
     from sentence_transformers import CrossEncoder

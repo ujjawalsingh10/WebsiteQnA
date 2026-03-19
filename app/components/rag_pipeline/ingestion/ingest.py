@@ -18,9 +18,9 @@ import os
 import sys
 import time
 from app.common.logger import get_logger
-from app.components.rag_pipeline.chunker import chunk_all_pages
-from app.components.rag_pipeline.embedder  import Embedder
-from app.components.rag_pipeline.qdrant_uploader import QdrantUploader
+from app.components.rag_pipeline.ingestion.chunker import chunk_all_pages
+from app.components.rag_pipeline.ingestion.embedder  import Embedder
+from app.components.rag_pipeline.ingestion.qdrant_uploader import QdrantUploader
 import argparse
 from pathlib import Path
 from dotenv import load_dotenv
@@ -28,7 +28,6 @@ from dotenv import load_dotenv
 load_dotenv()
 
 logger = get_logger(__name__)
-
 
 
 def run_ingestion(pages_dir: str, recreate: bool = False):

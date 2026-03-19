@@ -58,7 +58,7 @@ DEFAULT_CONFIG = {
         "max_retries": 3,
         "concurrent_requests": 1,
         "respect_robots_txt": True,
-        "user_agent": "RAGBot/1.0 (+https://yoursite.com/bot)",
+        "user_agent": "RAGBot/1.0 @cdac",
     },
     "scope": {
         "internal_only": True,

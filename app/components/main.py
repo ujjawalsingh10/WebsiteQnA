@@ -1,7 +1,6 @@
 """
 main.py
 -------
-Run the Phase 2 RAG agent interactively.
 
 Usage:
     cd app/components/rag_pipeline
@@ -81,15 +80,15 @@ def main():
     check_env()
 
     print("\n" + "="*60)
-    print("PM-JAY RAG AGENT — Phase 2")
+    print("RAG AGENT — Phase 2")
     print("="*60)
-    print("Loading models (first run takes ~60s)...")
+    print("Loading models...")
 
     from app.components.agent.agent_graph  import get_graph
     graph = get_graph()
 
     print("Ready!\n")
-    print("Type your question in English or Hindi.")
+    print("Type your question.")
     print("Type 'quit' to exit.\n")
 
     # State persists across turns for conversation memory

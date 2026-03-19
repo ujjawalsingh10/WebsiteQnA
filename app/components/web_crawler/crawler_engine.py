@@ -19,11 +19,11 @@ import time
 from pathlib import Path
 from urllib.parse import urlparse
 
-from crawler.url_frontier import URLFrontier
-from crawler.page_fetcher import PageFetcher
-from crawler.page_parser import PageParser
-from crawler.asset_downloader import AssetDownloader
-from storage.metadata_writer import MetadataWriter
+from app.components.web_crawler.crawler.url_frontier import URLFrontier
+from app.components.web_crawler.crawler.page_fetcher import PageFetcher
+from app.components.web_crawler.crawler.page_parser import PageParser
+from app.components.web_crawler.crawler.asset_downloader import AssetDownloader
+from app.components.web_crawler.storage.metadata_writer import MetadataWriter
 
 logger = logging.getLogger(__name__)
 

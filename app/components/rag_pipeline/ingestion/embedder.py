@@ -54,7 +54,7 @@ class Embedder:
     def embed_passages(
         self,
         texts: list[str],
-        show_progress: bool = True
+        show_progress: bool = False
     ) -> np.ndarray:
         """
         Embed document chunks before storing them in the vector database.

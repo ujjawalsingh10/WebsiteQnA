@@ -2,7 +2,7 @@ from ..state import AgentState
 
 def analyze_query(state: AgentState) -> AgentState:
     """
-    Initializes rewrite state
+    Initializes query rewrite state
     """
     return {
         **state,

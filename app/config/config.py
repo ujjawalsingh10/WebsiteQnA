@@ -28,8 +28,9 @@ MIN_SCORE        = 0.3    # discard candidates below this score
 # Cross-encoder model
 RERANKER_MODEL   = "cross-encoder/ms-marco-MiniLM-L-6-v2"
 
-HF_TOKEN = os.getenv('HF_TOKEN')
 
+# ******************* HuggingFace ***************
+HF_TOKEN = os.getenv('HF_TOKEN')
 ## LLMs
 HUGGINGFACE_REPO_ID = 'meta-llama/Llama-3.1-8B-Instruct'
 # HUGGINGFACE_REPO_ID = 'mistralai/Mistral-7B-Instruct-v0.3'

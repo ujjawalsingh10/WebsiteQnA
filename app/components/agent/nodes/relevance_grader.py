@@ -8,7 +8,7 @@ logger = get_logger(__name__)
 def grade_relevance(state: AgentState) -> AgentState:
     """
     Grade each retrieved doc for relevance to the query.
-    If fewer than 2 relevant docs → mark as insufficient → triggers rewrite.
+    If not enough retrieved → mark as insufficient → triggers rewrite.
     """
     query = state.get("rewritten_query") or state["query"]
     docs  = state.get("retrieved_docs", [])
@@ -32,7 +32,7 @@ def grade_relevance(state: AgentState) -> AgentState:
         except Exception:
             relevant.append(doc)   # assume relevant on error
 
-    grade = "sufficient" if len(relevant) >= 2 else "insufficient"
+    grade = "sufficient" if len(relevant) >= 1 else "insufficient"
     logger.info(f"Relevance grading — {len(relevant)}/{len(docs)} relevant, grade: {grade}")
 
     return {**state, "relevant_docs": relevant, "relevance_grade": grade}
