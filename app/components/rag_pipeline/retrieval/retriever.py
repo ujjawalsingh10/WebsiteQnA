@@ -201,7 +201,7 @@ class Retriever:
         Cross-encoder reads query+passage together → much more accurate than bi-encoder.
         """
         pairs = [(query, c["text"]) for c in candidates]
-        scores = self.reranker.predict(pairs)
+        scores = self.reranker.predict(pairs, show_progress_bar=False)
 
         for candidate, score in zip(candidates, scores):
             candidate["rerank_score"] = float(score)
